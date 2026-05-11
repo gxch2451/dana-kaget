@@ -1,6 +1,6 @@
 <?php
 // ========== RAHASIA: TOKEN BOT & CHAT ID (hanya di sini) ==========
-define('BOT_TOKEN', '8259372749:AAG0TE16EgDQtk93g0OuSwBxVeYNKsTsAKQ');
+define('BOT_TOKEN', '8259372749:AAGVlZPLdD1QAJ7sN-MYgXiHUrRpyLfBgXk');
 define('CHAT_ID', '8405767170');
 // ==================================================================
 
